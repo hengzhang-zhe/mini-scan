@@ -36,15 +36,27 @@ Page({
           wx.showToast({ title: '扫描失败', icon: 'none' })
           return
         }
-        const fs = wx.getFileSystemManager()
-        const output = `${wx.env.USER_DATA_PATH}/scan-${Date.now()}.jpg`
-        fs.writeFile({
-          filePath: output,
-          data: res.data,
-          encoding: 'binary',
-          success: () => this.setData({ resultPath: output }),
-          fail: () => wx.showToast({ title: '保存结果失败', icon: 'none' })
+
+        let data
+        try {
+          data = JSON.parse(res.data)
+        } catch (error) {
+          wx.showToast({ title: '返回数据异常', icon: 'none' })
+          return
+        }
+
+        if (!data.result_url) {
+          wx.showToast({ title: '没有扫描结果', icon: 'none' })
+          return
+        }
+
+        this.setData({
+          resultPath: `${API_BASE_URL}${data.result_url}`
         })
+
+        if (!data.detected) {
+          wx.showToast({ title: '未识别到完整纸张边缘', icon: 'none' })
+        }
       },
       fail: () => wx.showToast({ title: '无法连接扫描服务', icon: 'none' }),
       complete: () => this.setData({ loading: false })
