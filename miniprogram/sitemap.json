@@ -1,0 +1,4 @@
+{
+  "desc": "mini-scan sitemap",
+  "rules": [{ "action": "allow", "page": "*" }]
+}
