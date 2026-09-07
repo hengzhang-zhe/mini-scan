@@ -5,10 +5,36 @@
   </view>
 
   <view class="preview" bindtap="chooseImage">
-    <image wx:if="{{resultPath || sourcePath}}" src="{{resultPath || sourcePath}}" mode="aspectFit" />
+    <image
+      wx:if="{{resultPath || sourcePath}}"
+      src="{{resultPath || sourcePath}}"
+      mode="aspectFit"
+      style="transform: rotate({{rotationAngle}}deg);"
+    />
     <view wx:else class="empty">
       <text class="camera">▣</text>
       <text>点击拍照或选择图片</text>
+    </view>
+  </view>
+
+  <view wx:if="{{sourcePath && scanMode === 'quick'}}" class="rotate-panel">
+    <view class="rotate-head">
+      <text class="section-title rotate-title">旋转</text>
+      <text class="angle-value">{{rotationAngle}}°</text>
+    </view>
+    <slider
+      min="-180"
+      max="180"
+      step="1"
+      value="{{rotationAngle}}"
+      bindchanging="onRotateChanging"
+      bindchange="onRotateChange"
+      show-value="false"
+      disabled="{{loading}}"
+    />
+    <view class="rotate-actions">
+      <button class="mini-action" bindtap="resetRotation" disabled="{{loading}}">归零</button>
+      <button class="mini-action" bindtap="rotate90" disabled="{{loading}}">+90°</button>
     </view>
   </view>
 
@@ -34,7 +60,6 @@
     {{!sourcePath ? '拍照 / 选图' : (scanMode === 'quick' ? (loading ? '正在快速扫描…' : '快速扫描') : (loading ? '正在智能优化…' : '智能优化'))}}
   </button>
 
-  <button wx:if="{{sourcePath && scanMode === 'quick'}}" class="secondary" bindtap="rotate90" disabled="{{loading}}">顺时针旋转 90°</button>
   <button wx:if="{{sourcePath}}" class="secondary" bindtap="chooseImage" disabled="{{loading}}">重新拍摄</button>
 
   <canvas
