@@ -10,7 +10,8 @@ Page({
     filterMode: 'color',
     loading: false,
     canvasWidth: 1,
-    canvasHeight: 1
+    canvasHeight: 1,
+    rotationAngle: 0
   },
 
   chooseImage() {
@@ -19,7 +20,7 @@ Page({
       mediaType: ['image'],
       sourceType: ['camera', 'album'],
       success: ({ tempFiles }) => {
-        this.setData({ sourcePath: tempFiles[0].tempFilePath, resultPath: '', scanMode: 'quick' })
+        this.setData({ sourcePath: tempFiles[0].tempFilePath, resultPath: '', scanMode: 'quick', rotationAngle: 0 })
       }
     })
   },
@@ -27,50 +28,30 @@ Page({
   setScanMode(e) { this.setData({ scanMode: e.currentTarget.dataset.mode }) },
   setFilterMode(e) { this.setData({ filterMode: e.currentTarget.dataset.mode }) },
 
-  handlePrimary() {
-    if (!this.data.sourcePath) return this.chooseImage()
-    if (this.data.scanMode === 'smart') return this.smartOptimize()
-    this.quickScan()
+  onRotateChanging(e) {
+    this.setData({ rotationAngle: Number(e.detail.value) || 0 })
+  },
+
+  onRotateChange(e) {
+    this.setData({ rotationAngle: Number(e.detail.value) || 0 })
+  },
+
+  resetRotation() {
+    if (this.data.loading) return
+    this.setData({ rotationAngle: 0 })
   },
 
   rotate90() {
     if (!this.data.sourcePath || this.data.loading) return
-    const inputPath = this.data.resultPath || this.data.sourcePath
-    this.setData({ loading: true })
+    let angle = this.data.rotationAngle + 90
+    if (angle > 180) angle -= 360
+    this.setData({ rotationAngle: angle })
+  },
 
-    wx.getImageInfo({
-      src: inputPath,
-      success: ({ width, height }) => {
-        const scale = Math.min(1, QUICK_MAX_EDGE / Math.max(width, height))
-        const sourceWidth = Math.max(1, Math.round(width * scale))
-        const sourceHeight = Math.max(1, Math.round(height * scale))
-        const canvasWidth = sourceHeight
-        const canvasHeight = sourceWidth
-
-        this.setData({ canvasWidth, canvasHeight }, () => {
-          const ctx = wx.createCanvasContext('quickCanvas', this)
-          ctx.save()
-          ctx.translate(canvasWidth, 0)
-          ctx.rotate(Math.PI / 2)
-          ctx.drawImage(inputPath, 0, 0, sourceWidth, sourceHeight)
-          ctx.restore()
-          ctx.draw(false, () => {
-            wx.canvasToTempFilePath({
-              canvasId: 'quickCanvas',
-              x: 0, y: 0, width: canvasWidth, height: canvasHeight,
-              destWidth: canvasWidth, destHeight: canvasHeight,
-              fileType: 'jpg', quality: 0.94,
-              success: ({ tempFilePath }) => {
-                this.setData({ sourcePath: tempFilePath, resultPath: '', loading: false })
-                wx.showToast({ title: '已旋转 90°', icon: 'success' })
-              },
-              fail: () => this.quickScanFailed('旋转失败')
-            }, this)
-          })
-        })
-      },
-      fail: () => this.quickScanFailed('读取图片失败')
-    })
+  handlePrimary() {
+    if (!this.data.sourcePath) return this.chooseImage()
+    if (this.data.scanMode === 'smart') return this.smartOptimize()
+    this.quickScan()
   },
 
   quickScan() {
@@ -81,11 +62,23 @@ Page({
       src: this.data.sourcePath,
       success: ({ width, height }) => {
         const scale = Math.min(1, QUICK_MAX_EDGE / Math.max(width, height))
-        const canvasWidth = Math.max(1, Math.round(width * scale))
-        const canvasHeight = Math.max(1, Math.round(height * scale))
+        const sourceWidth = Math.max(1, Math.round(width * scale))
+        const sourceHeight = Math.max(1, Math.round(height * scale))
+        const radians = this.data.rotationAngle * Math.PI / 180
+        const cos = Math.abs(Math.cos(radians))
+        const sin = Math.abs(Math.sin(radians))
+        const canvasWidth = Math.max(1, Math.ceil(sourceWidth * cos + sourceHeight * sin))
+        const canvasHeight = Math.max(1, Math.ceil(sourceWidth * sin + sourceHeight * cos))
+
         this.setData({ canvasWidth, canvasHeight }, () => {
           const ctx = wx.createCanvasContext('quickCanvas', this)
-          ctx.drawImage(this.data.sourcePath, 0, 0, canvasWidth, canvasHeight)
+          ctx.setFillStyle('#ffffff')
+          ctx.fillRect(0, 0, canvasWidth, canvasHeight)
+          ctx.save()
+          ctx.translate(canvasWidth / 2, canvasHeight / 2)
+          ctx.rotate(radians)
+          ctx.drawImage(this.data.sourcePath, -sourceWidth / 2, -sourceHeight / 2, sourceWidth, sourceHeight)
+          ctx.restore()
           ctx.draw(false, () => this.processQuickCanvas(canvasWidth, canvasHeight))
         })
       },
@@ -155,7 +148,7 @@ Page({
 
   enhancePixels(data, width, height, filterMode) {
     const output = new Uint8ClampedArray(data.length)
-    const contrast = 1.12, brightness = 8
+    const contrast = 1.12
     const clamp = value => Math.max(0, Math.min(255, value))
     for (let i = 0; i < data.length; i += 4) {
       let r = clamp((data[i] - 128) * contrast + 136)
