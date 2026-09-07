@@ -3,10 +3,16 @@
 .title { display: block; font-size: 54rpx; font-weight: 700; }
 .subtitle { display: block; margin-top: 12rpx; color: #6b7280; font-size: 28rpx; }
 .preview { height: 700rpx; background: #fff; border-radius: 28rpx; overflow: hidden; box-shadow: 0 12rpx 40rpx rgba(0,0,0,.06); }
-.preview image { width: 100%; height: 100%; }
+.preview image { width: 100%; height: 100%; transition: transform .08s linear; }
 .empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24rpx; color: #9ca3af; }
 .camera { font-size: 80rpx; }
 .section-title { margin-top: 30rpx; margin-bottom: 16rpx; font-size: 26rpx; font-weight: 600; color: #374151; }
+.rotate-panel { margin-top: 24rpx; padding: 22rpx 24rpx; background: #fff; border-radius: 20rpx; }
+.rotate-head { display: flex; align-items: center; justify-content: space-between; }
+.rotate-title { margin: 0; }
+.angle-value { font-size: 28rpx; font-weight: 600; color: #111827; }
+.rotate-actions { display: flex; gap: 16rpx; margin-top: 8rpx; }
+.mini-action { flex: 1; margin: 0; background: #f3f4f6; color: #374151; border-radius: 16rpx; font-size: 25rpx; line-height: 2.3; }
 .scan-modes { display: flex; gap: 20rpx; }
 .scan-card { flex: 1; padding: 24rpx; border-radius: 20rpx; background: #fff; border: 2rpx solid transparent; }
 .scan-card.active { border-color: #2563eb; background: #eff6ff; }
