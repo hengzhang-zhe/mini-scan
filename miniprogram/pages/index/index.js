@@ -33,6 +33,46 @@ Page({
     this.quickScan()
   },
 
+  rotate90() {
+    if (!this.data.sourcePath || this.data.loading) return
+    const inputPath = this.data.resultPath || this.data.sourcePath
+    this.setData({ loading: true })
+
+    wx.getImageInfo({
+      src: inputPath,
+      success: ({ width, height }) => {
+        const scale = Math.min(1, QUICK_MAX_EDGE / Math.max(width, height))
+        const sourceWidth = Math.max(1, Math.round(width * scale))
+        const sourceHeight = Math.max(1, Math.round(height * scale))
+        const canvasWidth = sourceHeight
+        const canvasHeight = sourceWidth
+
+        this.setData({ canvasWidth, canvasHeight }, () => {
+          const ctx = wx.createCanvasContext('quickCanvas', this)
+          ctx.save()
+          ctx.translate(canvasWidth, 0)
+          ctx.rotate(Math.PI / 2)
+          ctx.drawImage(inputPath, 0, 0, sourceWidth, sourceHeight)
+          ctx.restore()
+          ctx.draw(false, () => {
+            wx.canvasToTempFilePath({
+              canvasId: 'quickCanvas',
+              x: 0, y: 0, width: canvasWidth, height: canvasHeight,
+              destWidth: canvasWidth, destHeight: canvasHeight,
+              fileType: 'jpg', quality: 0.94,
+              success: ({ tempFilePath }) => {
+                this.setData({ sourcePath: tempFilePath, resultPath: '', loading: false })
+                wx.showToast({ title: '已旋转 90°', icon: 'success' })
+              },
+              fail: () => this.quickScanFailed('旋转失败')
+            }, this)
+          })
+        })
+      },
+      fail: () => this.quickScanFailed('读取图片失败')
+    })
+  },
+
   quickScan() {
     if (!this.data.sourcePath || this.data.loading) return
     this.setData({ loading: true })
@@ -71,8 +111,6 @@ Page({
   },
 
   detectDocumentBounds(data, width, height) {
-    // 快速模式采用低成本矩形边界估计：从四周向内寻找明显的亮度/纹理变化。
-    // 它适合纸张与桌面有一定反差的普通拍摄；复杂场景交给智能优化。
     const step = Math.max(2, Math.round(Math.max(width, height) / 400))
     const marginX = Math.round(width * 0.03)
     const marginY = Math.round(height * 0.03)
