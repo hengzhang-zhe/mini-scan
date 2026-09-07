@@ -3,14 +3,21 @@
 .title { display: block; font-size: 54rpx; font-weight: 700; }
 .subtitle { display: block; margin-top: 12rpx; color: #6b7280; font-size: 28rpx; }
 .preview { height: 700rpx; background: #fff; border-radius: 28rpx; overflow: hidden; box-shadow: 0 12rpx 40rpx rgba(0,0,0,.06); }
-.preview image { width: 100%; height: 100%; transition: transform .08s linear; }
+.preview image { width: 100%; height: 100%; transition: transform .06s linear; }
 .empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24rpx; color: #9ca3af; }
 .camera { font-size: 80rpx; }
 .section-title { margin-top: 30rpx; margin-bottom: 16rpx; font-size: 26rpx; font-weight: 600; color: #374151; }
-.rotate-panel { margin-top: 24rpx; padding: 22rpx 24rpx; background: #fff; border-radius: 20rpx; }
+.rotate-panel { margin-top: 24rpx; padding: 22rpx 24rpx; background: #fff; border-radius: 20rpx; overflow: hidden; }
 .rotate-head { display: flex; align-items: center; justify-content: space-between; }
 .rotate-title { margin: 0; }
-.angle-value { font-size: 28rpx; font-weight: 600; color: #111827; }
+.angle-value { font-size: 30rpx; font-weight: 700; color: #111827; min-width: 90rpx; text-align: right; }
+.dial { position: relative; height: 118rpx; margin-top: 12rpx; overflow: hidden; touch-action: none; }
+.dial-pointer { position: absolute; z-index: 3; left: 50%; top: 4rpx; width: 4rpx; height: 78rpx; margin-left: -2rpx; border-radius: 4rpx; background: #2563eb; }
+.dial-track { position: absolute; left: 50%; top: 16rpx; display: flex; align-items: flex-start; width: max-content; will-change: transform; }
+.dial-tick-wrap { width: 40rpx; height: 90rpx; flex: none; text-align: center; }
+.dial-tick { width: 2rpx; height: 26rpx; margin: 0 auto; background: #cbd5e1; border-radius: 2rpx; }
+.dial-tick.major { width: 3rpx; height: 46rpx; background: #64748b; }
+.dial-label { display: block; margin-top: 8rpx; color: #94a3b8; font-size: 20rpx; line-height: 1; }
 .rotate-actions { display: flex; gap: 16rpx; margin-top: 8rpx; }
 .mini-action { flex: 1; margin: 0; background: #f3f4f6; color: #374151; border-radius: 16rpx; font-size: 25rpx; line-height: 2.3; }
 .scan-modes { display: flex; gap: 20rpx; }
