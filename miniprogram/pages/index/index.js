@@ -1,12 +1,16 @@
 const { API_BASE_URL } = require('../../utils/config')
 
+const QUICK_MAX_EDGE = 1200
+
 Page({
   data: {
     sourcePath: '',
     resultPath: '',
     scanMode: 'quick',
     filterMode: 'color',
-    loading: false
+    loading: false,
+    canvasWidth: 1,
+    canvasHeight: 1
   },
 
   chooseImage() {
@@ -48,12 +52,129 @@ Page({
 
   quickScan() {
     if (!this.data.sourcePath || this.data.loading) return
+    this.setData({ loading: true })
 
-    // 第一版快速扫描先建立本地处理入口。
-    // 后续在这里逐步加入：自动裁边、轻度透视、旋转、亮度/对比度、锐化、灰度/黑白、简单去噪。
-    // 当前先保留原图预览，确保快速模式不依赖后端。
-    this.setData({ resultPath: this.data.sourcePath })
-    wx.showToast({ title: '快速扫描完成', icon: 'success' })
+    wx.getImageInfo({
+      src: this.data.sourcePath,
+      success: ({ width, height }) => {
+        const scale = Math.min(1, QUICK_MAX_EDGE / Math.max(width, height))
+        const canvasWidth = Math.max(1, Math.round(width * scale))
+        const canvasHeight = Math.max(1, Math.round(height * scale))
+
+        this.setData({ canvasWidth, canvasHeight }, () => {
+          const ctx = wx.createCanvasContext('quickCanvas', this)
+          ctx.drawImage(this.data.sourcePath, 0, 0, canvasWidth, canvasHeight)
+          ctx.draw(false, () => {
+            this.processQuickCanvas(canvasWidth, canvasHeight)
+          })
+        })
+      },
+      fail: () => {
+        this.setData({ loading: false })
+        wx.showToast({ title: '读取图片失败', icon: 'none' })
+      }
+    })
+  },
+
+  processQuickCanvas(width, height) {
+    wx.canvasGetImageData({
+      canvasId: 'quickCanvas',
+      x: 0,
+      y: 0,
+      width,
+      height,
+      success: ({ data }) => {
+        const pixels = new Uint8ClampedArray(data)
+        const enhanced = this.enhancePixels(pixels, width, height, this.data.filterMode)
+
+        wx.canvasPutImageData({
+          canvasId: 'quickCanvas',
+          x: 0,
+          y: 0,
+          width,
+          height,
+          data: enhanced,
+          success: () => this.exportQuickCanvas(width, height),
+          fail: () => this.quickScanFailed('处理图片失败')
+        }, this)
+      },
+      fail: () => this.quickScanFailed('读取像素失败')
+    }, this)
+  },
+
+  enhancePixels(data, width, height, filterMode) {
+    const output = new Uint8ClampedArray(data.length)
+    const contrast = 1.12
+    const brightness = 8
+    const clamp = value => Math.max(0, Math.min(255, value))
+
+    for (let i = 0; i < data.length; i += 4) {
+      let r = clamp((data[i] - 128) * contrast + 128 + brightness)
+      let g = clamp((data[i + 1] - 128) * contrast + 128 + brightness)
+      let b = clamp((data[i + 2] - 128) * contrast + 128 + brightness)
+
+      if (filterMode === 'bw') {
+        const gray = 0.299 * r + 0.587 * g + 0.114 * b
+        const value = gray > 168 ? 255 : (gray < 92 ? 0 : gray)
+        r = value
+        g = value
+        b = value
+      }
+
+      output[i] = r
+      output[i + 1] = g
+      output[i + 2] = b
+      output[i + 3] = data[i + 3]
+    }
+
+    // 轻量锐化：中心像素增强，避免在手机端执行高成本卷积。
+    if (width > 2 && height > 2) {
+      const source = new Uint8ClampedArray(output)
+      for (let y = 1; y < height - 1; y += 1) {
+        for (let x = 1; x < width - 1; x += 1) {
+          const i = (y * width + x) * 4
+          const left = i - 4
+          const right = i + 4
+          const up = i - width * 4
+          const down = i + width * 4
+
+          for (let c = 0; c < 3; c += 1) {
+            const sharpened = source[i + c] * 3
+              - source[left + c] * 0.5
+              - source[right + c] * 0.5
+              - source[up + c] * 0.5
+              - source[down + c] * 0.5
+            output[i + c] = clamp(sharpened)
+          }
+        }
+      }
+    }
+
+    return output
+  },
+
+  exportQuickCanvas(width, height) {
+    wx.canvasToTempFilePath({
+      canvasId: 'quickCanvas',
+      x: 0,
+      y: 0,
+      width,
+      height,
+      destWidth: width,
+      destHeight: height,
+      fileType: 'jpg',
+      quality: 0.92,
+      success: ({ tempFilePath }) => {
+        this.setData({ resultPath: tempFilePath, loading: false })
+        wx.showToast({ title: '快速扫描完成', icon: 'success' })
+      },
+      fail: () => this.quickScanFailed('生成扫描结果失败')
+    }, this)
+  },
+
+  quickScanFailed(message) {
+    this.setData({ loading: false })
+    wx.showToast({ title: message, icon: 'none' })
   },
 
   smartOptimize() {
@@ -83,9 +204,7 @@ Page({
           return
         }
 
-        this.setData({
-          resultPath: `${API_BASE_URL}${data.result_url}`
-        })
+        this.setData({ resultPath: `${API_BASE_URL}${data.result_url}` })
 
         if (!data.detected) {
           wx.showToast({ title: '未识别到完整纸张边缘', icon: 'none' })
