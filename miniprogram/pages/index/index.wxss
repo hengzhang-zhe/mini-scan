@@ -17,3 +17,4 @@
 .mode.active { background: #111827; color: #fff; }
 .primary { background: #2563eb; color: #fff; border-radius: 20rpx; font-weight: 600; }
 .secondary { margin-top: 20rpx; background: #fff; color: #374151; border-radius: 20rpx; }
+.quick-canvas { position: fixed; left: -10000px; top: -10000px; pointer-events: none; opacity: 0; }
