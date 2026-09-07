@@ -22,16 +22,27 @@
       <text class="section-title rotate-title">旋转</text>
       <text class="angle-value">{{rotationAngle}}°</text>
     </view>
-    <slider
-      min="-180"
-      max="180"
-      step="1"
-      value="{{rotationAngle}}"
-      bindchanging="onRotateChanging"
-      bindchange="onRotateChange"
-      show-value="false"
-      disabled="{{loading}}"
-    />
+
+    <view
+      class="dial"
+      bindtouchstart="onDialStart"
+      catchtouchmove="onDialMove"
+      bindtouchend="onDialEnd"
+      bindtouchcancel="onDialEnd"
+    >
+      <view class="dial-pointer"></view>
+      <view class="dial-track" style="transform: translateX(calc(-50% + {{dialOffset}}rpx));">
+        <view
+          wx:for="{{rotationTicks}}"
+          wx:key="angle"
+          class="dial-tick-wrap"
+        >
+          <view class="dial-tick {{item.major ? 'major' : ''}}"></view>
+          <text wx:if="{{item.major}}" class="dial-label">{{item.angle}}</text>
+        </view>
+      </view>
+    </view>
+
     <view class="rotate-actions">
       <button class="mini-action" bindtap="resetRotation" disabled="{{loading}}">归零</button>
       <button class="mini-action" bindtap="rotate90" disabled="{{loading}}">+90°</button>
