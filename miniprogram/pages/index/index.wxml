@@ -1,7 +1,7 @@
 <view class="page">
   <view class="hero">
     <text class="title">Mini Scan</text>
-    <text class="subtitle">拍一张，自动拉正为扫描件</text>
+    <text class="subtitle">简单扫描本地完成，不满意再智能优化</text>
   </view>
 
   <view class="preview" bindtap="chooseImage">
@@ -12,13 +12,26 @@
     </view>
   </view>
 
-  <view class="modes">
-    <view class="mode {{mode === 'color' ? 'active' : ''}}" data-mode="color" bindtap="setMode">彩色扫描</view>
-    <view class="mode {{mode === 'bw' ? 'active' : ''}}" data-mode="bw" bindtap="setMode">黑白扫描</view>
+  <view class="section-title">处理方式</view>
+  <view class="scan-modes">
+    <view class="scan-card {{scanMode === 'quick' ? 'active' : ''}}" data-mode="quick" bindtap="setScanMode">
+      <text class="scan-name">快速扫描</text>
+      <text class="scan-desc">本地处理 · 更快 · 无需上传</text>
+    </view>
+    <view class="scan-card {{scanMode === 'smart' ? 'active' : ''}}" data-mode="smart" bindtap="setScanMode">
+      <text class="scan-name">智能优化</text>
+      <text class="scan-desc">复杂图片 · 效果优先</text>
+    </view>
   </view>
 
-  <button class="primary" bindtap="{{sourcePath ? 'scan' : 'chooseImage'}}" loading="{{loading}}">
-    {{sourcePath ? (loading ? '正在扫描…' : '自动扫描') : '拍照 / 选图'}}
+  <view class="section-title">输出效果</view>
+  <view class="modes">
+    <view class="mode {{filterMode === 'color' ? 'active' : ''}}" data-mode="color" bindtap="setFilterMode">彩色</view>
+    <view class="mode {{filterMode === 'bw' ? 'active' : ''}}" data-mode="bw" bindtap="setFilterMode">黑白</view>
+  </view>
+
+  <button class="primary" bindtap="handlePrimary" loading="{{loading}}">
+    {{!sourcePath ? '拍照 / 选图' : (scanMode === 'quick' ? '快速扫描' : (loading ? '正在智能优化…' : '智能优化'))}}
   </button>
 
   <button wx:if="{{sourcePath}}" class="secondary" bindtap="chooseImage">重新拍摄</button>
