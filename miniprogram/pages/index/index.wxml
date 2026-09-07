@@ -34,7 +34,8 @@
     {{!sourcePath ? '拍照 / 选图' : (scanMode === 'quick' ? (loading ? '正在快速扫描…' : '快速扫描') : (loading ? '正在智能优化…' : '智能优化'))}}
   </button>
 
-  <button wx:if="{{sourcePath}}" class="secondary" bindtap="chooseImage">重新拍摄</button>
+  <button wx:if="{{sourcePath && scanMode === 'quick'}}" class="secondary" bindtap="rotate90" disabled="{{loading}}">顺时针旋转 90°</button>
+  <button wx:if="{{sourcePath}}" class="secondary" bindtap="chooseImage" disabled="{{loading}}">重新拍摄</button>
 
   <canvas
     class="quick-canvas"
