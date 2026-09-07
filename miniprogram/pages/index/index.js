@@ -1,6 +1,10 @@
 const { API_BASE_URL } = require('../../utils/config')
 
 const QUICK_MAX_EDGE = 1200
+const ROTATION_TICKS = Array.from({ length: 73 }, (_, i) => {
+  const angle = i * 5 - 180
+  return { angle, major: angle % 30 === 0 }
+})
 
 Page({
   data: {
@@ -11,7 +15,9 @@ Page({
     loading: false,
     canvasWidth: 1,
     canvasHeight: 1,
-    rotationAngle: 0
+    rotationAngle: 0,
+    dialOffset: 0,
+    rotationTicks: ROTATION_TICKS
   },
 
   chooseImage() {
@@ -20,7 +26,13 @@ Page({
       mediaType: ['image'],
       sourceType: ['camera', 'album'],
       success: ({ tempFiles }) => {
-        this.setData({ sourcePath: tempFiles[0].tempFilePath, resultPath: '', scanMode: 'quick', rotationAngle: 0 })
+        this.setData({
+          sourcePath: tempFiles[0].tempFilePath,
+          resultPath: '',
+          scanMode: 'quick',
+          rotationAngle: 0,
+          dialOffset: 0
+        })
       }
     })
   },
@@ -28,24 +40,39 @@ Page({
   setScanMode(e) { this.setData({ scanMode: e.currentTarget.dataset.mode }) },
   setFilterMode(e) { this.setData({ filterMode: e.currentTarget.dataset.mode }) },
 
-  onRotateChanging(e) {
-    this.setData({ rotationAngle: Number(e.detail.value) || 0 })
+  setRotationAngle(angle) {
+    let next = Math.round(Number(angle) || 0)
+    while (next > 180) next -= 360
+    while (next < -180) next += 360
+    this.setData({ rotationAngle: next, dialOffset: -next * 8 })
   },
 
-  onRotateChange(e) {
-    this.setData({ rotationAngle: Number(e.detail.value) || 0 })
+  onDialStart(e) {
+    if (this.data.loading || !e.touches || !e.touches.length) return
+    this._dialStartX = e.touches[0].clientX
+    this._dialStartAngle = this.data.rotationAngle
+  },
+
+  onDialMove(e) {
+    if (this.data.loading || this._dialStartX == null || !e.touches || !e.touches.length) return
+    const deltaX = e.touches[0].clientX - this._dialStartX
+    const angleDelta = -deltaX / 4
+    this.setRotationAngle(this._dialStartAngle + angleDelta)
+  },
+
+  onDialEnd() {
+    this._dialStartX = null
+    this._dialStartAngle = null
   },
 
   resetRotation() {
     if (this.data.loading) return
-    this.setData({ rotationAngle: 0 })
+    this.setRotationAngle(0)
   },
 
   rotate90() {
     if (!this.data.sourcePath || this.data.loading) return
-    let angle = this.data.rotationAngle + 90
-    if (angle > 180) angle -= 360
-    this.setData({ rotationAngle: angle })
+    this.setRotationAngle(this.data.rotationAngle + 90)
   },
 
   handlePrimary() {
