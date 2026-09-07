@@ -31,8 +31,14 @@
   </view>
 
   <button class="primary" bindtap="handlePrimary" loading="{{loading}}">
-    {{!sourcePath ? '拍照 / 选图' : (scanMode === 'quick' ? '快速扫描' : (loading ? '正在智能优化…' : '智能优化'))}}
+    {{!sourcePath ? '拍照 / 选图' : (scanMode === 'quick' ? (loading ? '正在快速扫描…' : '快速扫描') : (loading ? '正在智能优化…' : '智能优化'))}}
   </button>
 
   <button wx:if="{{sourcePath}}" class="secondary" bindtap="chooseImage">重新拍摄</button>
+
+  <canvas
+    class="quick-canvas"
+    canvas-id="quickCanvas"
+    style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"
+  ></canvas>
 </view>
